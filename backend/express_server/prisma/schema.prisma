@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RedactionMethod {
+  mask
+  hash
+  remove
+  fake
+
+  @@map("redaction_method")
+}
+
+enum DocumentStatus {
+  processing
+  complete
+  failed
+
+  @@map("document_status")
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  username       String           @unique
+  email          String           @unique
+  password       String
+  createdAt      DateTime         @default(now()) @map("created_at")
+  documents      Document[]
+  uploadTracking UploadTracking[]
+  preference     UserPreference?
+
+  @@map("users")
+}
+
+model UserPreference {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redactionMethod     String   @default("mask") @map("redaction_method")
+  confidenceThreshold Int      @default(70) @map("confidence_threshold")
+  entityTypes         Json?    @map("entity_types")
+
+  @@map("user_preferences")
+}
+
+model Document {
+  id                  Int            @id @default(autoincrement())
+  userId              Int            @map("user_id")
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  filename            String         @db.VarChar(255)
+  fileType            String         @map("file_type") @db.VarChar(10)
+  fileSizeBytes       Int            @map("file_size_bytes")
+
+  originalFilePath    String?        @map("original_file_path") @db.VarChar(500)
+  redactedFilePath    String?        @map("redacted_file_path") @db.VarChar(500)
+
+  redactionMethod     RedactionMethod @map("redaction_method")
+  status              DocumentStatus  @default(processing) @map("status")
+
+  entityCounts        Json?          @map("entity_counts")
+  totalEntities       Int?           @map("total_entities")
+
+  processingTimeMs    Int?           @map("processing_time_ms")
+  confidenceThreshold Int            @map("confidence_threshold") @default(70)
+  entityTypesSelected Json?          @map("entity_types_selected")
+
+  preserveFormatting  Boolean        @map("preserve_formatting") @default(false)
+
+  indexedToEs         Boolean        @map("indexed_to_es") @default(false)
+  esIndexedAt         DateTime?      @map("es_indexed_at")
+
+  originalDeleted     Boolean        @map("original_deleted") @default(false)
+  originalDeleteAt    DateTime?      @map("original_delete_at")
+
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  entities            DocumentEntity[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([originalDeleteAt])
+  @@index([createdAt])
+  @@map("documents")
+}
+
+model DocumentEntity {
+  id         Int      @id @default(autoincrement())
+  documentId Int      @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  entityText String   @map("entity_text") @db.VarChar(500)
+  entityType String   @map("entity_type") @db.VarChar(20)
+  startPos   Int      @map("start_pos")
+  endPos     Int      @map("end_pos")
+  confidence Float    @default(1.0)
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([documentId])
+  @@index([entityType])
+  @@index([documentId, entityType])
+  @@map("document_entities")
+}
+
+model UploadTracking {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@index([userId, uploadedAt])
+  @@map("upload_tracking")
+}

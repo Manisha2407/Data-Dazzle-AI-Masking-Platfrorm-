@@ -1,0 +1,76 @@
+services:
+
+  frontend:
+    build:
+      context: ../frontend
+    container_name: datadazzle_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - express
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+
+  express:
+    build:
+      context: ../backend/express_server
+    container_name: datadazzle_express
+    ports:
+      - "5000:5000"
+    env_file:
+      - ../backend/express_server/.env.docker
+    depends_on:
+      - postgres
+      - elasticsearch
+      - django
+    volumes:
+      - ../backend/express_server:/app
+      - /app/node_modules
+
+  django:
+    build:
+      context: ../backend/django_server
+    container_name: datadazzle_django
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend/django_server:/app
+
+  postgres:
+    image: postgres:16
+    container_name: datadazzle_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: data_dazzle
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.enrollment.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      XPACK_SECURITY_ENABLED: "false"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  postgres_data:
+  es_data:

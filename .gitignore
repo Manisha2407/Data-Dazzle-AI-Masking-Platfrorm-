@@ -1,0 +1,15 @@
+backend/express_server/node_modules/
+backend/django_server/venv/
+frontend/node_modules/
+backend/express_server/.env
+backend/django_server/nlp_service/__pycache__/
+backend/django_server/redaction/__pycache__/
+backend/django_server/redaction/migrations/
+backend/django_server/redaction/migrations/__pycache__/
+backend/django_server/redaction/detectors/__pycache__/
+backend/django_server/redaction/utils/__pycache__/
+backend/django_server/redaction/services/__pycache__/
+backend/django_server/redaction/recognizers/__pycache__/
+backend/django_server/redaction/processing/__pycache__/
+backend/express_server/uploads/originals/
+backend/express_server/uploads/redacted/
