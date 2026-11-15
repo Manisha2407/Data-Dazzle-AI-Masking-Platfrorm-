@@ -295,7 +295,7 @@ The project includes:
 
 # Author
 
-Developed by pr0xius.
+Developed by Manisha.
 
 ---
 
